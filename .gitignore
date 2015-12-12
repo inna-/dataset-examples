@@ -1,6 +1,7 @@
 *~
-*.swp
-*.pyc
-*.json
-.tox
+*.db
 *.egg-info
+*.json
+*.pyc
+*.swp
+.tox
