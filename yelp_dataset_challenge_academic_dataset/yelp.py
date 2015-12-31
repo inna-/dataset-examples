@@ -11,6 +11,8 @@ cur.execute('''CREATE TABLE IF NOT EXISTS business(id TEXT PRIMARY KEY, name TEX
 cur.execute('''CREATE TABLE IF NOT EXISTS business_category(business_id TEXT,category_name TEXT, FOREIGN KEY(business_id) REFERENCES business(id) ON UPDATE CASCADE, FOREIGN KEY(category_name) REFERENCES category(name) ON UPDATE CASCADE)''')
 cur.execute('''CREATE TABLE IF NOT EXISTS user(id TEXT PRIMARY KEY, name TEXT, review_count INTEGER, average_stars REAL, funny INTEGER, useful INTEGER, cool INTEGER)''')
 cur.execute('''CREATE TABLE IF NOT EXISTS review(id TEXT PRIMARY KEY, business_id TEXT, user_id TEXT,stars INTEGER, date TEXT, type TEXT, text TEXT, funny INTEGER, useful INTEGER, cool INTEGER, FOREIGN KEY(business_id) REFERENCES business(id) ON UPDATE CASCADE, FOREIGN KEY(user_id) REFERENCES user(id) ON UPDATE CASCADE)''')
+cur.execute('''CREATE TABLE IF NOT EXISTS tip(user_id TEXT, text TEXT, business_id TEXT, likes INTEGER, date TEXT, FOREIGN KEY(user_id) REFERENCES user(id) ON UPDATE CASCADE, FOREIGN KEY(business_id) REFERENCES business(id) ON UPDATE CASCADE)''')
+cur.execute('''CREATE TABLE IF NOT EXISTS attribute(business_id TEXT, attr TEXT, value TEXT, FOREIGN KEY(business_id) REFERENCES business(id) ON UPDATE CASCADE)''')
 
 def reviews():
     with open('yelp_academic_dataset_review.json') as f:
@@ -86,10 +88,14 @@ def tips():
     with open('yelp_academic_dataset_tip.json') as f:
         for line in f:
             d = json.loads(line)
-            for k, v in d.iteritems():
-                print k, v
-            break
-
+            data = [d['user_id'], 
+                    d['text'],
+                    d['business_id'],
+                    d['likes'],
+                    d['date']]
+            cur.execute('INSERT INTO Tip values (?, ?, ?, ?, ?)', data)
+            print 'inserted', data[0], data[1]
+    db.commit()
 
 def checkins():
     with open('yelp_academic_dataset_checkin.json') as f:
@@ -102,11 +108,31 @@ def checkins():
                 print k[0], k[1], v
             break
 
+def attributes():
+    with open('yelp_academic_dataset_business.json') as f:
+        for line in f:
+            d = json.loads(line)
+            business_id = d['business_id']
+            attributes = d['attributes']
+            for k, v in attributes.iteritems():
+                if type(v) == dict:
+                    for k1, v1 in v.iteritems():
+                        data = [business_id, "%s %s" %(k, k1), str(v1)]
+                        cur.execute('INSERT INTO Attribute values (?, ?, ?)', data)
+                        print 'inserted', data[0]
+                else:
+                    data = [business_id, k, str(v)]
+                    cur.execute('INSERT INTO Attribute values (?, ?, ?)', data)
+                    print 'inserted', data[0]
+
+    db.commit()
+
 # user()
 # updateBiz()
 # updateCat()
 # updateBizCat()
 # reviews()
 # checkins()
-
+# attributes()
+# tips()
 db.close()
